@@ -4,6 +4,8 @@ Welcome to the official repository of **WEPO**, a novel approach for optimizing 
 
 This repository contains the implementation of **WEPO** (Web Element Preference Optimization), which leverages **unsupervised preference learning** for contrastive training using **distance-based negative sampling**. Our method optimizes the interaction of LLMs with web elements by selecting relevant elements that align with user intent, improving web navigation and interaction efficiency.
 
+The paper detailing this approach has been **accepted at AAAI 2025**. You can find more details in the full paper.
+
 > **[Hugging Face Model: WEPO-Llama-3-8b](https://huggingface.co/KLGR123/WEPO-llama-3-8b)**  
 > (Pre-trained model for the WEPO framework)
 
