@@ -100,20 +100,7 @@ output
 
 ---
 
-### Contributing
-
-We welcome contributions to the WEPO project! If you are interested in contributing, please follow these steps:
-
-1. Fork the repository and create your branch.
-2. Make your changes.
-3. Run tests to ensure everything works correctly.
-4. Submit a pull request describing your changes.
-
-Please refer to our [CONTRIBUTING.md](CONTRIBUTING.md) for more detailed guidelines.
-
----
-
-### Cite Us
+### 🎯 Cite Us
 
 If you use **WEPO** in your research or applications, please cite our work:
 
@@ -127,14 +114,10 @@ If you use **WEPO** in your research or applications, please cite our work:
 }
 ```
 
+For any inquiries, please reach out to us at [liujiarun01@bupt.edu.cn].
+
 ---
 
-### License
+### 📍 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-### 🎯 Contact
-
-For any inquiries, please reach out to us at [liujiarun01@bupt.edu.cn].
