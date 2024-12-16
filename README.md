@@ -137,5 +137,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### 🎯 Contact
 
-For any inquiries, please reach out to us at:  
-[liujiarun01@bupt.edu.cn]
+For any inquiries, please reach out to us at [liujiarun01@bupt.edu.cn].
