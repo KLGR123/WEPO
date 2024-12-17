@@ -9,7 +9,7 @@ The paper detailing this approach has been **accepted at AAAI 2025**. You can fi
 > **[Hugging Face Model: WEPO-Llama-3-8b](https://huggingface.co/KLGR123/WEPO-llama-3-8b)**  
 > (Pre-trained model for the WEPO framework)
 
-**Arxiv Link**: _[Coming soon!](#)_
+> **[Arxiv Link](https://arxiv.org/pdf/2412.10742)**
 
 ---
 
