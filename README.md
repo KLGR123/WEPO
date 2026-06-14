@@ -107,12 +107,16 @@ output
 If you use **WEPO** in your research or applications, please cite our work:
 
 ```
-@article{wepo2024,
-  title={WEPO: Web Element Preference Optimization for LLM-based Web Navigation},
-  author={Jiarun Liu, Jia Hao, Chunhong Zhang, Zheng Hu},
-  journal={Arxiv},
-  year={2024},
-  url={MY_ARXIV_LINK}
+@inproceedings{liu2025wepo,
+  title     = {WEPO: Web Element Preference Optimization for LLM-based Web Navigation},
+  author    = {Liu, Jiarun and Hao, Jie and Zhang, Chi and Hu, Zitong},
+  booktitle = {Proceedings of the AAAI Conference on Artificial Intelligence},
+  volume    = {39},
+  number    = {25},
+  pages     = {26614--26622},
+  year      = {2025},
+  doi       = {10.1609/aaai.v39i25.34863},
+  url       = {https://ojs.aaai.org/index.php/AAAI/article/view/34863}
 }
 ```
 
