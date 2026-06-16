@@ -169,8 +169,6 @@ model = PeftModel.from_pretrained(base, "checkpoints/llama3_wepo/best").merge_an
 }
 ```
 
-For any inquiries, please reach out to us at [liujiarun01@bupt.edu.cn].
-
 ---
 
 ## License
