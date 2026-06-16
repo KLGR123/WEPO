@@ -1,112 +1,161 @@
-# 🖲️ WEPO: Web Element Preference Optimization for LLM-based Web Navigation
+# WEPO: Web Element Preference Optimization for LLM-based Web Navigation
 
-Welcome to the official repository of **WEPO**, a novel approach for optimizing web element preferences in Large Language Model (LLM)-based web navigation tasks.
+Official repository of **WEPO** (AAAI 2025), a preference-optimization framework for
+LLM-based web navigation agents. WEPO leverages **distance-based negative sampling**
+over the DOM tree to build contrastive preference pairs/groups from Mind2Web data,
+then fine-tunes an LLM with **DPO / nDPO** so it learns to pick the correct web
+element given a user intent, current HTML, and action history.
 
-This repository contains the implementation of **WEPO** (Web Element Preference Optimization), which leverages **unsupervised preference learning** for contrastive training using **distance-based negative sampling**. Our method optimizes the interaction of LLMs with web elements by selecting relevant elements that align with user intent, improving web navigation and interaction efficiency.
-
-The paper detailing this approach has been **accepted at AAAI 2025**. You can find more details in the full paper.
-
-> **[Hugging Face Model: WEPO-Llama-3-8b](https://huggingface.co/KLGR123/WEPO-llama-3-8b)**  
-> (Pre-trained model for the WEPO framework)
-
+> **[Hugging Face Model: WEPO-Llama-3-8b](https://huggingface.co/KLGR123/WEPO-llama-3-8b)**
 > **[Arxiv Link](https://arxiv.org/pdf/2412.10742)**
 
 ---
 
-### Table of Contents
+## Installation
 
-- [WEPO Implementation](#wepo-implementation)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Contributing](#contributing)
-- [Cite Us](#cite-us)
-- [License](#license)
-
----
-
-### 📑 WEPO Implementation
-
-**WEPO** leverages **distance-based sampling** and **Direct Preference Optimization (DPO)** for optimizing LLM-based web navigation tasks. The implementation focuses on the DOM (Document Object Model) structure, sampling relevant and non-relevant web elements based on their distance within the DOM tree.
-
-The main steps of the **WEPO** implementation include:
-
-1. **DOM Parsing & Pruning**: The HTML of a web page is parsed into a DOM tree. A pruning mechanism isolates the most relevant elements for training by traversing the DOM and focusing on key elements and their ancestors.
-   
-2. **Distance-based Negative Sampling**: The method samples non-salient (negative) web elements based on their distance from relevant (positive) elements in the DOM. These samples are used in a contrastive learning setup.
-
-3. **Direct Preference Optimization (DPO)**: We fine-tune a pretrained model using DPO, which optimizes the likelihood of operations on preferred elements and minimizes the likelihood of dis-preferred elements. The method avoids reward modeling and ensures stable training.
-
-4. **Negative Sampling and Operation Diversity**: During training, a heuristic rule is applied to balance the sample types and ensure diverse operation types are used (e.g., `CLICK`, `TYPE`, `SELECT`).
+```bash
+git clone https://github.com/KLGR123/WEPO.git
+cd WEPO
+pip install -r requirements.txt
+```
 
 ---
 
-### 🔩 Installation
+## Data Preparation
 
-To install WEPO, follow these steps:
+```bash
+# Training set (positive + sampled negatives)
+python scripts/prepare_train.py \
+    --data_dir   data/train_dataset \
+    --output     data/mind2web_dpo_train.json \
+    --sampling   distance \
+    --n_neg      3 \
+    --max_tokens 7900 \
+    --tokenizer  meta-llama/Meta-Llama-3-8B-Instruct
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/KLGR123/WEPO.git
-   cd WEPO
-   ```
+# Test sets (DeBERTa-ranked candidate pruning)
+python scripts/prepare_test.py \
+    --data_dir   data/test_dataset \
+    --scores_pkl data/scores_all_data.pkl \
+    --output_dir data \
+    --top_k      50 \
+    --max_tokens 5000 \
+    --tokenizer  meta-llama/Meta-Llama-3-8B-Instruct
+```
 
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-   
 ---
 
-### ⚙️ Usage
+## DeBERTa Candidate Ranker
 
-Below is the reference code for inference. First load the tokenizer and the model.
+```bash
+# BCE
+python deberta/train.py \
+    --data_dir   data/train_dataset \
+    --output_dir checkpoints/deberta_bce \
+    --loss       bce \
+    --model      microsoft/deberta-v3-base \
+    --epochs 3 --batch_size 32 --lr 2e-5 --fp16
+
+# InfoNCE
+python deberta/train.py \
+    --data_dir   data/train_dataset \
+    --output_dir checkpoints/deberta_infonce \
+    --loss        infonce \
+    --max_neg     10 \
+    --temperature 0.07 \
+    --model       microsoft/deberta-v3-base \
+    --epochs 3 --batch_size 8 --lr 2e-5 --fp16
+```
+
+---
+
+## LLM Fine-tuning with (n)DPO
+
+```bash
+# nDPO (paper setting): Llama-3-8B, distance-based negatives, n=3
+python llm/train_dpo.py \
+    --model      meta-llama/Meta-Llama-3-8B-Instruct \
+    --data       data/mind2web_dpo_train.json \
+    --output     checkpoints/llama3_wepo \
+    --loss_type  ndpo \
+    --beta       0.95 \
+    --n_neg      3 \
+    --lora_r 16 --lora_alpha 32 --lora_dropout 0.05 \
+    --batch_size 2 --grad_accum 8 --lr 1e-4 --epochs 3 \
+    --bf16
+
+# Pairwise DPO ablation
+python llm/train_dpo.py \
+    --model      meta-llama/Meta-Llama-3-8B-Instruct \
+    --data       data/mind2web_dpo_train.json \
+    --output     checkpoints/llama3_wepo_pairwise \
+    --loss_type  pairwise \
+    --beta       0.95 \
+    --n_neg      3 \
+    --bf16
+```
+
+---
+
+## Evaluation
+
+```bash
+python llm/evaluate.py \
+    --base_model meta-llama/Meta-Llama-3-8B-Instruct \
+    --model      checkpoints/llama3_wepo/best \
+    --data       data/mind2web_dpo_test_domain_ranked_50.json \
+                 data/mind2web_dpo_test_task_ranked_50.json \
+                 data/mind2web_dpo_test_website_ranked_50.json \
+    --splits     test_domain test_task test_website \
+    --output     results/llama3_wepo.json \
+    --bf16
+```
+
+Reports SSR (Step Success Rate), Op F1, and Element Distance per split and overall.
+Pass `--save_predictions` to also dump raw generations for manual inspection.
+
+---
+
+## Quick Inference
 
 ```python
 from transformers import AutoTokenizer, AutoModelForCausalLM
+
 tokenizer = AutoTokenizer.from_pretrained("KLGR123/WEPO-llama-3-8b", trust_remote_code=True)
-model = AutoModelForCausalLM.from_pretrained("KLGR123/WEPO-llama-3-8b", trust_remote_code=True).to('cuda:0')
-```
+model = AutoModelForCausalLM.from_pretrained("KLGR123/WEPO-llama-3-8b", trust_remote_code=True).to("cuda:0")
 
-Run a test-demo with random input.
-
-```python
 messages = [
     {"role": "system", "content": "You are a web navigation intelligence who interacts with webpage environments to achieve human user intent."},
     {"role": "user", "content": "Who are you?"},
 ]
 
 input_ids = tokenizer.apply_chat_template(
-    messages,
-    add_generation_prompt=True,
-    return_tensors="pt"
+    messages, add_generation_prompt=True, return_tensors="pt"
 ).to(model.device)
 
-terminators = [
-    tokenizer.eos_token_id,
-    tokenizer.convert_tokens_to_ids("<|eot_id|>")
-]
+terminators = [tokenizer.eos_token_id, tokenizer.convert_tokens_to_ids("<|eot_id|>")]
 
 outputs = model.generate(
-    input_ids,
-    max_new_tokens=128,
-    eos_token_id=terminators,
-    do_sample=True,
-    temperature=0.2,
-    top_p=0.9,
+    input_ids, max_new_tokens=128, eos_token_id=terminators,
+    do_sample=True, temperature=0.2, top_p=0.9,
 )
+print(tokenizer.decode(outputs[0][input_ids.shape[-1]:], skip_special_tokens=True))
+```
 
-response = outputs[0][input_ids.shape[-1]:]
-output = tokenizer.decode(response, skip_special_tokens=True)
-output
+If you fine-tuned your own LoRA adapter, load the base model and merge instead:
+
+```python
+from peft import PeftModel
+
+base = AutoModelForCausalLM.from_pretrained("meta-llama/Meta-Llama-3-8B-Instruct", trust_remote_code=True)
+model = PeftModel.from_pretrained(base, "checkpoints/llama3_wepo/best").merge_and_unload()
 ```
 
 ---
 
-### 🎯 Cite Us
+## Cite Us
 
-If you use **WEPO** in your research or applications, please cite our work:
-
-```
+```bibtex
 @inproceedings{liu2025wepo,
   title     = {WEPO: Web Element Preference Optimization for LLM-based Web Navigation},
   author    = {Liu, Jiarun and Hao, Jie and Zhang, Chi and Hu, Zitong},
@@ -124,6 +173,6 @@ For any inquiries, please reach out to us at [liujiarun01@bupt.edu.cn].
 
 ---
 
-### 📍 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
