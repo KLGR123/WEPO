@@ -69,7 +69,7 @@ python deberta/train.py \
 
 ---
 
-## LLM Fine-tuning with (n)DPO
+## LLM Fine-tuning with $n$-DPO
 
 ```bash
 # nDPO (paper setting): Llama-3-8B, distance-based negatives, n=3
